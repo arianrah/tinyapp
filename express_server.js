@@ -1,9 +1,11 @@
 const express = require("express");
 const app = express();
-const PORT = 8080; // default port 8080
+const PORT = 3000;
 app.set("view engine", "ejs");
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
+
+//./node_modules/.bin/nodemon -L express_server.js
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -31,26 +33,49 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+//add new
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  console.log(req.body);  // Log the POST req body to the console
+  let longURL = req.body;
+  let shortURL = generateRandomString();
+  urlDatabase[shortURL] = longURL;
+  res.redirect(`http://localhost:${PORT}/urls/${shortURL}`)
 });
 
+//edit (new id page)
+app.post('/urls/:id', (req, res) => {
+  const shortURL = req.params.id;
+  const {longURL} = req.body;
+  urlDatabase[shortURL] = longURL;
+  res.redirect(`/urls/${shortURL}`);
+});
+
+//delete
+app.post('/urls/:id/delete', (req, res) => {
+  const id = req.params.id;
+  delete urlDatabase[id];
+  res.redirect('/urls');
+});
+
+
+//longURL not updating on html to proper data
 app.get("/urls/:shortURL", (req, res) => {
+  let id = req.params.shortURL;
   let templateVars = { 
     shortURL: req.params.shortURL, 
-    longURL: urlDatabase[req.params.shortURL]
+    longURL: urlDatabase[id]
   };
   res.render("urls_show", templateVars);
 });
 
-  //////////////////////
- //////FUNCTION////////
+  /////////////////////
+ //////FUNCTION///////
 /////////////////////
+
 const crypto = require("crypto");
 const generateRandomString = function() {
   const short = crypto.randomBytes(3).toString('hex');
