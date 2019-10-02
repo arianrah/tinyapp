@@ -7,11 +7,12 @@ need assistance on:
 
 const express = require("express");
 const app = express();
-const PORT = 8080;
+const port = 8080;
 app.set("view engine", "ejs");
 const bodyParser = require("body-parser");
-const cookie = require("cookie-parser");
+const cookieParser = require("cookie-parser");
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieParser())
 
 //./node_modules/.bin/nodemon -L express_server.js
 
@@ -21,19 +22,20 @@ const urlDatabase = {
 };
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  let templateVars = { urls: urlDatabase }
+  res.render("urls_index", templateVars);
 });
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
+// app.get("/hello", (req, res) => {
+//   res.send("<html><body>Hello <b>World</b></body></html>\n");
+// });
 
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}!`);
 });
 
 app.get("/urls", (req, res) => {
@@ -44,7 +46,7 @@ app.get("/urls", (req, res) => {
 //signin things
 app.post('/login', (req, res) => {
   let templateVars = {
-    username: req.cookies["username"],
+    username: req.cookies[username],
   };
   res.render("urls_index", templateVars);
 });
@@ -59,7 +61,7 @@ app.post("/urls", (req, res) => {
   let longURL = req.body;
   let shortURL = generateRandomString();
   urlDatabase[shortURL] = longURL;
-  res.redirect(`http://localhost:${PORT}/urls/${shortURL}`)
+  res.redirect(`http://localhost:${port}/urls/${shortURL}`)
 });
 
 //edit (new id page)
@@ -83,8 +85,9 @@ app.get("/urls/:shortURL", (req, res) => {
   let id = req.params.shortURL;
   let templateVars = { 
     shortURL: req.params.shortURL, 
-    longURL: urlDatabase[id]
+    longURL: JSON.stringify(urlDatabase[id])
   };
+  console.log(urlDatabase[id]);
   res.render("urls_show", templateVars);
 });
 
