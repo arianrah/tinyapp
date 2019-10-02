@@ -1,8 +1,16 @@
+/*
+need assistance on:
+  cookies login
+  where to save username
+  proper route usage(?)
+*/
+
 const express = require("express");
 const app = express();
-const PORT = 3000;
+const PORT = 8080;
 app.set("view engine", "ejs");
 const bodyParser = require("body-parser");
+const cookie = require("cookie-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
 //./node_modules/.bin/nodemon -L express_server.js
@@ -30,6 +38,14 @@ app.listen(PORT, () => {
 
 app.get("/urls", (req, res) => {
   let templateVars = { urls: urlDatabase };
+  res.render("urls_index", templateVars);
+});
+
+//signin things
+app.post('/login', (req, res) => {
+  let templateVars = {
+    username: req.cookies["username"],
+  };
   res.render("urls_index", templateVars);
 });
 
