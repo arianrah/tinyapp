@@ -21,12 +21,21 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-const user = {
-
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
 }
 
 app.get("/", (req, res) => {
-  let templateVars = { urls: urlDatabase, username: req.cookies["username"] }
+  let templateVars = { urls: urlDatabase, username: req.cookies.username }
   res.render("urls_index", templateVars);
 });
 
@@ -51,14 +60,22 @@ app.post('/login', (req, res) => {
 });
 
 app.post('/logout', (req, res) => {
-  res.clearCookie('user')
-  console.log(req.cookies.username);
+  // console.log(req.cookies["username"])
+  // res.cookie("username", undefined);
+  // console.log(req.cookies.username)
+  res.clearCookie("username");
   res.redirect("/urls")
 })
 
+//reg page
+app.get("/register", (req, res) => {
+
+  res.render("register")
+})
+
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase, user: req.cookies.username };
-  let user =  templateVars.user;
+  let templateVars = { urls: urlDatabase, username: req.cookies["username"] };
+  // console.log(req.cookies["username"])
   // console.log("username test", templateVars.user);
   // console.log(username);
   res.render("urls_index", templateVars);
@@ -66,7 +83,8 @@ app.get("/urls", (req, res) => {
 
 //add new
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  let templateVars = {username: req.cookies["username"]}
+  res.render("urls_new", templateVars);
 });
 
 app.post("/urls", (req, res) => {
@@ -92,7 +110,6 @@ app.post('/urls/:id/delete', (req, res) => {
   res.redirect('/urls');
 });
 
-
 //longURL not updating on html to proper data
 app.get("/urls/:shortURL", (req, res) => {
   let id = req.params.shortURL;
@@ -104,6 +121,7 @@ app.get("/urls/:shortURL", (req, res) => {
   // console.log(urlDatabase[id]);
   res.render("urls_show", templateVars);
 });
+
 
   /////////////////////
  //////FUNCTION///////
