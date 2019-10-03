@@ -11,9 +11,9 @@
       </div>
     </div>
     <div class='signin'>
-        <% if( username !== undefined ){ %>
+        <% if(user !== undefined ){ %>
           <form method='POST' action='/logout' id='logout'>
-            Logged in as <%= username %>!
+            Logged in as <%= user.email %>!
             <input type="submit" value="Logout" class="btn btn-primary"></input>
           </form>
         <% } else { %>  
@@ -22,6 +22,9 @@
             <button type="submit" class="btn btn-primary">Login</button>
           </form>
        <% } %>
+       <form method='GET' action='/register' id='register'>
+        <button type="submit" class="btn btn-primary" style=>Register</button>
+      </form>
     </div>
   </nav>
 </header>

@@ -5,6 +5,10 @@ need assistance on:
   proper route usage(?)
 */
 
+  /////////////////////
+ ////////CONFIG///////
+/////////////////////
+
 const express = require("express");
 const app = express();
 const port = 8080;
@@ -14,6 +18,23 @@ const cookies = require("cookie-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookies());
 
+  /////////////////////
+ //////FUNCTION///////
+/////////////////////
+
+
+//RANDOM GENERATOR!
+const crypto = require("crypto");
+const generateRandomString = function() {
+  const short = crypto.randomBytes(3).toString('hex');
+  return short;
+}
+
+
+  /////////////////////
+ ////////SERVER///////
+/////////////////////
+
 //./node_modules/.bin/nodemon -L express_server.js
 
 const urlDatabase = {
@@ -22,11 +43,13 @@ const urlDatabase = {
 };
 
 const users = { 
+
   "userRandomID": {
     id: "userRandomID", 
     email: "user@example.com", 
     password: "purple-monkey-dinosaur"
   },
+
  "user2RandomID": {
     id: "user2RandomID", 
     email: "user2@example.com", 
@@ -35,7 +58,7 @@ const users = {
 }
 
 app.get("/", (req, res) => {
-  let templateVars = { urls: urlDatabase, username: req.cookies.username }
+  let templateVars = { urls: urlDatabase, username: req.cookies.username, user: users[req.cookies["user_id"]] }
   res.render("urls_index", templateVars);
 });
 
@@ -53,9 +76,9 @@ app.listen(port, () => {
 
 //signin things
 app.post('/login', (req, res) => {
-  let username = req.body;
+  // let username = req.body;
   // let cookieGen = generateRandomString();
-  res.cookie("username", username.username)
+  res.cookie("username", req.body.username)
   res.redirect("/urls")
 });
 
@@ -69,12 +92,48 @@ app.post('/logout', (req, res) => {
 
 //reg page
 app.get("/register", (req, res) => {
-
-  res.render("register")
+  let templateVars = { urls: urlDatabase, username: req.cookies["username"], user: users[req.cookies["user_id"]] };
+  res.render("register", templateVars)
 })
 
+app.post("/register", (req, res) => {
+
+  if (req.body.email == "" || req.body.password == ""){
+    res.status(400).send("EMAIL OR PASSWORD IS EMPTY!!😡");
+  }
+
+  if (eLookup(req.body.email) === true){
+    res.status(400).send("EMAIL ALREADY IN USE!!😡");
+  }
+
+  const userID = generateRandomString();
+  // console.log("random HEYOOO");
+  users[userID] = {};
+  // users[userID] = userID;
+  // users[userID].email = req.body.email;
+  // users[userID].password = req.body.password;
+  let userInfo = users[userID];
+  userInfo.id = userID;
+  userInfo.email = req.body.email;
+  userInfo.password = req.body.password;
+  res.cookie("user_id", userID);
+  // console.log(users)
+  res.redirect("/urls");
+})
+
+//EMAIL LOOKUPS!
+const eLookup = function(eToFind) {
+  console.log("eLookup ENGAGED!!!/\/\//\/\//\/\/\/\\//\/\\/\//\/\//\/")
+  for (const user in users){
+    if (eToFind === users[user].email){
+      // console.log(users[user].email)
+      return true
+    }
+  }
+}
+
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase, username: req.cookies["username"] };
+  let templateVars = { urls: urlDatabase, username: req.cookies["username"], user: users[req.cookies["user_id"]] };
   // console.log(req.cookies["username"])
   // console.log("username test", templateVars.user);
   // console.log(username);
@@ -83,7 +142,7 @@ app.get("/urls", (req, res) => {
 
 //add new
 app.get("/urls/new", (req, res) => {
-  let templateVars = {username: req.cookies["username"]}
+  let templateVars = {username: req.cookies["username"], user: users[req.cookies["user_id"]]}
   res.render("urls_new", templateVars);
 });
 
@@ -116,19 +175,9 @@ app.get("/urls/:shortURL", (req, res) => {
   let templateVars = { 
     shortURL: req.params.shortURL, 
     longURL: urlDatabase[id],
-    username: req.cookies["username"]
+    username: req.cookies["username"],
+    user: users[req.cookies["userID"]]
   };
   // console.log(urlDatabase[id]);
   res.render("urls_show", templateVars);
 });
-
-
-  /////////////////////
- //////FUNCTION///////
-/////////////////////
-
-const crypto = require("crypto");
-const generateRandomString = function() {
-  const short = crypto.randomBytes(3).toString('hex');
-  return short;
-}
