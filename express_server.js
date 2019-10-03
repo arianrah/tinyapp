@@ -11,7 +11,7 @@ need assistance on:
 
 const express = require("express");
 const app = express();
-const port = 8080;
+const port = 3453;
 app.set("view engine", "ejs");
 const bodyParser = require("body-parser");
 const cookies = require("cookie-parser");
@@ -76,17 +76,31 @@ app.listen(port, () => {
 
 //signin things
 app.post('/login', (req, res) => {
+  let email = req.body.email;
+  let password = req.body.password;
+  if (eLookup(email) === true && pwLookup(password)) {
+    res.cookie("user_id", users["user_id"])
+    res.redirect('/urls')
+  } else {
+    res.status(403).send("bad login")
+  }
+  console.log(users)
   // let username = req.body;
   // let cookieGen = generateRandomString();
-  res.cookie("username", req.body.username)
-  res.redirect("/urls")
+  // res.cookie("username", req.body.username)
+  // res.redirect("/urls")
 });
+
+app.get('/login', (req, res) => {
+  let templateVars = { urls: urlDatabase, username: req.cookies["username"], user: users[req.cookies["user_id"]] };
+  res.render('urls_login', templateVars);
+})
 
 app.post('/logout', (req, res) => {
   // console.log(req.cookies["username"])
   // res.cookie("username", undefined);
   // console.log(req.cookies.username)
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls")
 })
 
@@ -117,7 +131,7 @@ app.post("/register", (req, res) => {
   userInfo.email = req.body.email;
   userInfo.password = req.body.password;
   res.cookie("user_id", userID);
-  // console.log(users)
+  console.log(users)
   res.redirect("/urls");
 })
 
@@ -131,6 +145,16 @@ const eLookup = function(eToFind) {
     }
   }
 }
+const pwLookup = function(eToFind) {
+  console.log("pwLookup ENGAGED!!!/\/\//\/\//\/\/\/\\//\/\\/\//\/\//\/")
+  for (const user in users){
+    if (eToFind === users[user].password){
+      // console.log(users[user].email)
+      return true
+    }
+  }
+}
+
 
 app.get("/urls", (req, res) => {
   let templateVars = { urls: urlDatabase, username: req.cookies["username"], user: users[req.cookies["user_id"]] };
