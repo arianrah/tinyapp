@@ -11,7 +11,7 @@ need assistance on:
 
 const express = require("express");
 const app = express();
-const port = 3453;
+const port = 8080;
 app.set("view engine", "ejs");
 const bodyParser = require("body-parser");
 const cookies = require("cookie-parser");
@@ -20,6 +20,12 @@ app.use(cookies());
 const bcrypt = require('bcrypt');
 const password = "purple-monkey-dinosaur"; // found in the req.params object
 const hashedPassword = bcrypt.hashSync(password, 10);
+var cookieSession = require('cookie-session')
+app.use(cookieSession({
+  name: 'user_id',
+  keys: ['lol'],
+  maxAge: 24 * 60 * 60 * 1000
+}))
 
   /////////////////////
  //////FUNCTION///////
@@ -39,7 +45,7 @@ const eLookup = function(eToFind) {
   for (const user in users){
     if (eToFind === users[user].email){
       // console.log(users[user].email)
-      return true
+      return users[user]
     }
   }
 }
@@ -95,7 +101,7 @@ const users = {
 }
 
 app.get("/", (req, res) => {
-  let templateVars = { urls: urlDatabase, username: req.cookies.username, user: users[req.cookies["user_id"]] }
+  let templateVars = { urls: urlDatabase, username: req.cookies.username, user: users[req.session.user_id] }
   res.render("urls_index", templateVars);
 });
 
@@ -115,8 +121,10 @@ app.listen(port, () => {
 app.post('/login', (req, res) => {
   let email = req.body.email;
   let password = req.body.password;
-  if (eLookup(email) === true && bcrypt.compareSync("purple-monkey-dinosaur", hashedPassword)) {
-    res.cookie("user_id", users["user_id"]) 
+  let user = eLookup(email);
+  if (user && bcrypt.compareSync(password, user.password)) {
+    // res.cookie("user_id", users["user_id"]) 
+    req.session['user_id'] = user.id;
     //req.session.user_id = user.id
     res.redirect('/urls')
   } else {
@@ -130,8 +138,8 @@ app.post('/login', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  let newDB = urlsForUserId(req.cookies["user_id"])
-  let templateVars = { urls: newDB, user: users[req.cookies["user_id"]] };
+  let newDB = urlsForUserId(req.session.user_id)
+  let templateVars = { urls: newDB, user: users[req.session.user_id] };
   res.render('urls_login', templateVars);
 })
 
@@ -139,14 +147,15 @@ app.post('/logout', (req, res) => {
   // console.log(req.cookies["username"])
   // res.cookie("username", undefined);
   // console.log(req.cookies.username)
-  res.clearCookie("user_id");
+  // res.clearCookie("user_id");
+  req.session = null;
   res.redirect("/urls")
 })
 
 //reg page
 app.get("/register", (req, res) => {
-  newDB = urlsForUserId(req.cookies["user_id"])
-  let templateVars = { urls: newDB, user: users[req.cookies["user_id"]] };
+  newDB = urlsForUserId(req.session.user_id)
+  let templateVars = { urls: newDB, user: users[req.session.user_id] };
   res.render("register", templateVars)
 })
 
@@ -156,7 +165,7 @@ app.post("/register", (req, res) => {
     res.status(400).send("EMAIL OR PASSWORD IS EMPTY!!😡");
   }
 
-  if (eLookup(req.body.email) === true){
+  if (eLookup(req.body.email)){
     res.status(400).send("EMAIL ALREADY IN USE!!😡");
   }
 
@@ -167,34 +176,36 @@ app.post("/register", (req, res) => {
   // users[userID].email = req.body.email;
   // users[userID].password = req.body.password;
   let userInfo = users[userID];
+  let password = req.body.password;
   userInfo.id = userID;
   userInfo.email = req.body.email;
-  userInfo.password = bcrypt.hashSync(req.body.password, 10);
-  res.cookie("user_id", userID);
+  userInfo.password = bcrypt.hashSync(password, 10);
+  // res.cookie("user_id", userID); tv = user: users[req.session.user_id
+  req.session.user_id = userID;
   // console.log(users)
   res.redirect("/urls");
 })
 
 app.get("/urls", (req, res) => {
-  if (!req.cookies["user_id"]){
-    newDB = urlsForUserId(req.cookies["user_id"])
-    let templateVars = { urls: newDB, user: users[req.cookies["user_id"]] };
+  if (!req.session.user_id){
+    newDB = urlsForUserId(req.session.user_id)
+    let templateVars = { urls: newDB, user: users[req.session.user_id] };
     res.render("urls_home", templateVars)
   } else {
-    newDB = urlsForUserId(req.cookies["user_id"])
-    let templateVars = { urls: newDB, user: users[req.cookies["user_id"]] };
+    newDB = urlsForUserId(req.session.user_id)
+    let templateVars = { urls: newDB, user: users[req.session.user_id] };
     res.render("urls_index", templateVars);
   }
 });
 
 //add new
 app.get("/urls/new", (req, res) => {
-  newDB = urlsForUserId(req.cookies["user_id"])
-  let templateVars = {urls: newDB, user: users[req.cookies["user_id"]]}
+  newDB = urlsForUserId(req.session.user_id)
+  let templateVars = {urls: newDB, user: users[req.session.user_id]}
   // console.log(users)
   // console.log("database")
-  console.log(urlDatabase)
-  if (!req.cookies["user_id"]){
+  // console.log(urlDatabase)
+  if (!req.session.user_id){
     res.redirect("/login");
   } else {
     res.render("urls_new", templateVars);
@@ -210,7 +221,7 @@ app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
   urlDatabase[shortURL] = {
     longURL: longURL,
-    userID: req.cookies["user_id"]
+    userID: req.session.user_id
   }
   res.redirect(`/urls/${shortURL}`)
 });
@@ -228,7 +239,7 @@ app.post('/urls/:id', (req, res) => {
 
 //delete 
 app.post('/urls/:id/delete', (req, res) => {
-  if (!req.cookies["user_id"]){
+  if (!req.session.user_id){
     res.redirect('/login')
   }else {
     const id = req.params.id;
@@ -240,11 +251,11 @@ app.post('/urls/:id/delete', (req, res) => {
 //longURL not updating on html to proper data **fixed
 app.get("/urls/:shortURL", (req, res) => {
   let id = req.params.shortURL;
-  newDB = urlsForUserId(req.cookies["user_id"])
+  newDB = urlsForUserId(req.session.user_id)
   let templateVars = { 
     shortURL: id, 
     urls: newDB,
-    user: users[req.cookies["user_id"]]
+    user: users[req.session.user_id]
   }
   // console.log(templateVars)
   res.render("urls_show", templateVars);
