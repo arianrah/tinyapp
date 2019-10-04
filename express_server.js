@@ -17,6 +17,9 @@ const bodyParser = require("body-parser");
 const cookies = require("cookie-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookies());
+const bcrypt = require('bcrypt');
+const password = "purple-monkey-dinosaur"; // found in the req.params object
+const hashedPassword = bcrypt.hashSync(password, 10);
 
   /////////////////////
  //////FUNCTION///////
@@ -30,6 +33,43 @@ const generateRandomString = function() {
   return short;
 }
 
+//EMAIL LOOKUPS!eEEEEE
+const eLookup = function(eToFind) {
+  console.log("/\/\//\/\//\/\/\/\\//\/\\/\//\/\//\/eLookup ENGAGED!!!")
+  for (const user in users){
+    if (eToFind === users[user].email){
+      // console.log(users[user].email)
+      return true
+    }
+  }
+}
+
+//PW LOOKUPS!6^V^V^V^V^V^V^V^V^V^V^V^
+const pwLookup = function(eToFind) {
+  console.log("pwLookup ENGAGED!!!/\/\//\/\//\/\/\/\\//\/\\/\//\/\//\/")
+  for (const user in users){
+    if (eToFind === users[user].password){
+      // console.log(users[user].email)
+      return true
+    }
+  }
+}
+const urlDatabase = {
+  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
+  i3BoGr: { longURL: "https://www.google.ca", userID: "user2RandomID"}
+};
+//compare current user_id with user_id of users obj and return url info
+const urlsForUserId = function(user_id){
+  console.log("urlsForUserID INITIATED AND RUNNING 😇")
+  const userDB = {}
+  for (const item in urlDatabase){
+    if (user_id === urlDatabase[item].userID){
+      userDB[item] = urlDatabase[item].longURL
+    }
+  }
+  return userDB;
+}
+console.log(urlsForUserId("userRandomID"));
 
   /////////////////////
  ////////SERVER///////
@@ -37,10 +77,7 @@ const generateRandomString = function() {
 
 //./node_modules/.bin/nodemon -L express_server.js
 
-const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
-};
+
 
 const users = { 
 
@@ -78,13 +115,14 @@ app.listen(port, () => {
 app.post('/login', (req, res) => {
   let email = req.body.email;
   let password = req.body.password;
-  if (eLookup(email) === true && pwLookup(password)) {
-    res.cookie("user_id", users["user_id"])
+  if (eLookup(email) === true && bcrypt.compareSync("purple-monkey-dinosaur", hashedPassword)) {
+    res.cookie("user_id", users["user_id"]) 
+    //req.session.user_id = user.id
     res.redirect('/urls')
   } else {
     res.status(403).send("bad login")
   }
-  console.log(users)
+  // console.log(users)
   // let username = req.body;
   // let cookieGen = generateRandomString();
   // res.cookie("username", req.body.username)
@@ -92,7 +130,8 @@ app.post('/login', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  let templateVars = { urls: urlDatabase, username: req.cookies["username"], user: users[req.cookies["user_id"]] };
+  let newDB = urlsForUserId(req.cookies["user_id"])
+  let templateVars = { urls: newDB, user: users[req.cookies["user_id"]] };
   res.render('urls_login', templateVars);
 })
 
@@ -106,7 +145,8 @@ app.post('/logout', (req, res) => {
 
 //reg page
 app.get("/register", (req, res) => {
-  let templateVars = { urls: urlDatabase, username: req.cookies["username"], user: users[req.cookies["user_id"]] };
+  newDB = urlsForUserId(req.cookies["user_id"])
+  let templateVars = { urls: newDB, user: users[req.cookies["user_id"]] };
   res.render("register", templateVars)
 })
 
@@ -129,79 +169,83 @@ app.post("/register", (req, res) => {
   let userInfo = users[userID];
   userInfo.id = userID;
   userInfo.email = req.body.email;
-  userInfo.password = req.body.password;
+  userInfo.password = bcrypt.hashSync(req.body.password, 10);
   res.cookie("user_id", userID);
-  console.log(users)
+  // console.log(users)
   res.redirect("/urls");
 })
 
-//EMAIL LOOKUPS!
-const eLookup = function(eToFind) {
-  console.log("eLookup ENGAGED!!!/\/\//\/\//\/\/\/\\//\/\\/\//\/\//\/")
-  for (const user in users){
-    if (eToFind === users[user].email){
-      // console.log(users[user].email)
-      return true
-    }
-  }
-}
-const pwLookup = function(eToFind) {
-  console.log("pwLookup ENGAGED!!!/\/\//\/\//\/\/\/\\//\/\\/\//\/\//\/")
-  for (const user in users){
-    if (eToFind === users[user].password){
-      // console.log(users[user].email)
-      return true
-    }
-  }
-}
-
-
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase, username: req.cookies["username"], user: users[req.cookies["user_id"]] };
-  // console.log(req.cookies["username"])
-  // console.log("username test", templateVars.user);
-  // console.log(username);
-  res.render("urls_index", templateVars);
+  if (!req.cookies["user_id"]){
+    newDB = urlsForUserId(req.cookies["user_id"])
+    let templateVars = { urls: newDB, user: users[req.cookies["user_id"]] };
+    res.render("urls_home", templateVars)
+  } else {
+    newDB = urlsForUserId(req.cookies["user_id"])
+    let templateVars = { urls: newDB, user: users[req.cookies["user_id"]] };
+    res.render("urls_index", templateVars);
+  }
 });
 
 //add new
 app.get("/urls/new", (req, res) => {
-  let templateVars = {username: req.cookies["username"], user: users[req.cookies["user_id"]]}
-  res.render("urls_new", templateVars);
+  newDB = urlsForUserId(req.cookies["user_id"])
+  let templateVars = {urls: newDB, user: users[req.cookies["user_id"]]}
+  // console.log(users)
+  // console.log("database")
+  console.log(urlDatabase)
+  if (!req.cookies["user_id"]){
+    res.redirect("/login");
+  } else {
+    res.render("urls_new", templateVars);
+  }
 });
 
+
+//CREATE NEW URL!!!!!!!!!!!!!!
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST req body to the console
+  // console.log(req.body);  // Log the POST req body to the console
   let longURL = req.body;
+  // console.log(longURL);
   let shortURL = generateRandomString();
-  urlDatabase[shortURL] = longURL;
-  res.redirect(`http://localhost:${port}/urls/${shortURL}`)
+  urlDatabase[shortURL] = {
+    longURL: longURL,
+    userID: req.cookies["user_id"]
+  }
+  res.redirect(`/urls/${shortURL}`)
 });
 
-//edit (new id page)
+//edit page
 app.post('/urls/:id', (req, res) => {
   const shortURL = req.params.id;
-  const {longURL} = req.body;
-  urlDatabase[shortURL] = longURL;
+  const longURL = req.body;
+  urlDatabase[shortURL] = {
+    "longURL": longURL,
+    "userID": users["userID"]
+  }
   res.redirect(`/urls/${shortURL}`);
 });
 
-//delete
+//delete 
 app.post('/urls/:id/delete', (req, res) => {
-  const id = req.params.id;
-  delete urlDatabase[id];
-  res.redirect('/urls');
+  if (!req.cookies["user_id"]){
+    res.redirect('/login')
+  }else {
+    const id = req.params.id;
+    delete urlDatabase[id];
+    res.redirect('/urls');
+  }
 });
 
-//longURL not updating on html to proper data
+//longURL not updating on html to proper data **fixed
 app.get("/urls/:shortURL", (req, res) => {
   let id = req.params.shortURL;
+  newDB = urlsForUserId(req.cookies["user_id"])
   let templateVars = { 
-    shortURL: req.params.shortURL, 
-    longURL: urlDatabase[id],
-    username: req.cookies["username"],
-    user: users[req.cookies["userID"]]
-  };
-  // console.log(urlDatabase[id]);
+    shortURL: id, 
+    urls: newDB,
+    user: users[req.cookies["user_id"]]
+  }
+  // console.log(templateVars)
   res.render("urls_show", templateVars);
 });
