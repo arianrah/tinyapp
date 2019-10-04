@@ -15,11 +15,12 @@ const port = 8080;
 app.set("view engine", "ejs");
 const bodyParser = require("body-parser");
 const cookies = require("cookie-parser");
+const {getUserByEmail, urlsForUserId} = require('./helpers')
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookies());
 const bcrypt = require('bcrypt');
-const password = "purple-monkey-dinosaur"; // found in the req.params object
-const hashedPassword = bcrypt.hashSync(password, 10);
+// const password = "purple-monkey-dinosaur"; // found in the req.params object
+// const hashedPassword = bcrypt.hashSync(password, 10);
 var cookieSession = require('cookie-session')
 app.use(cookieSession({
   name: 'user_id',
@@ -40,42 +41,43 @@ const generateRandomString = function() {
 }
 
 //EMAIL LOOKUPS!eEEEEE
-const eLookup = function(eToFind) {
-  console.log("/\/\//\/\//\/\/\/\\//\/\\/\//\/\//\/eLookup ENGAGED!!!")
-  for (const user in users){
-    if (eToFind === users[user].email){
-      // console.log(users[user].email)
-      return users[user]
-    }
-  }
-}
+// const getUserByEmail = function(eToFind, obj) {
+//   console.log("/\/\//\/\//\/\/\/\\//\/\\/\//\/\//\/getUserByEmail ENGAGED!!!")
+//   for (const user in obj){
+//     if (eToFind === obj[user].email){
+//       // console.log(users[user].email)
+//       return obj[user];
+//     }
+//   }
+// }
 
 //PW LOOKUPS!6^V^V^V^V^V^V^V^V^V^V^V^
-const pwLookup = function(eToFind) {
-  console.log("pwLookup ENGAGED!!!/\/\//\/\//\/\/\/\\//\/\\/\//\/\//\/")
-  for (const user in users){
-    if (eToFind === users[user].password){
-      // console.log(users[user].email)
-      return true
-    }
-  }
-}
+// const pwLookup = function(eToFind) {
+//   console.log("pwLookup ENGAGED!!!/\/\//\/\//\/\/\/\\//\/\\/\//\/\//\/")
+//   for (const user in users){
+//     if (eToFind === users[user].password){
+//       // console.log(users[user].email)
+//       return true
+//     }
+//   }
+// }
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
   i3BoGr: { longURL: "https://www.google.ca", userID: "user2RandomID"}
 };
+
 //compare current user_id with user_id of users obj and return url info
-const urlsForUserId = function(user_id){
-  console.log("urlsForUserID INITIATED AND RUNNING 😇")
-  const userDB = {}
-  for (const item in urlDatabase){
-    if (user_id === urlDatabase[item].userID){
-      userDB[item] = urlDatabase[item].longURL
-    }
-  }
-  return userDB;
-}
-console.log(urlsForUserId("userRandomID"));
+// const urlsForUserId = function(user_id, db){
+//   console.log("urlsForUserID INITIATED AND RUNNING 😇")
+//   const userDB = {}
+//   for (const item in db){
+//     if (user_id === db[item].userID){
+//       userDB[item] = db[item].longURL
+//     }
+//   }
+//   return userDB;
+//}
+// console.log(urlsForUserId("userRandomID"));
 
   /////////////////////
  ////////SERVER///////
@@ -121,7 +123,7 @@ app.listen(port, () => {
 app.post('/login', (req, res) => {
   let email = req.body.email;
   let password = req.body.password;
-  let user = eLookup(email);
+  let user = getUserByEmail(email, users);
   if (user && bcrypt.compareSync(password, user.password)) {
     // res.cookie("user_id", users["user_id"]) 
     req.session['user_id'] = user.id;
@@ -138,7 +140,7 @@ app.post('/login', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  let newDB = urlsForUserId(req.session.user_id)
+  let newDB = urlsForUserId(req.session.user_id, urlDatabase)
   let templateVars = { urls: newDB, user: users[req.session.user_id] };
   res.render('urls_login', templateVars);
 })
@@ -165,7 +167,7 @@ app.post("/register", (req, res) => {
     res.status(400).send("EMAIL OR PASSWORD IS EMPTY!!😡");
   }
 
-  if (eLookup(req.body.email)){
+  if (getUserByEmail(req.body.email, users)){
     res.status(400).send("EMAIL ALREADY IN USE!!😡");
   }
 
@@ -188,11 +190,11 @@ app.post("/register", (req, res) => {
 
 app.get("/urls", (req, res) => {
   if (!req.session.user_id){
-    newDB = urlsForUserId(req.session.user_id)
+    newDB = urlsForUserId(req.session.user_id, urlDatabase)
     let templateVars = { urls: newDB, user: users[req.session.user_id] };
     res.render("urls_home", templateVars)
   } else {
-    newDB = urlsForUserId(req.session.user_id)
+    newDB = urlsForUserId(req.session.user_id, urlDatabase)
     let templateVars = { urls: newDB, user: users[req.session.user_id] };
     res.render("urls_index", templateVars);
   }
@@ -200,7 +202,7 @@ app.get("/urls", (req, res) => {
 
 //add new
 app.get("/urls/new", (req, res) => {
-  newDB = urlsForUserId(req.session.user_id)
+  newDB = urlsForUserId(req.session.user_id, urlDatabase)
   let templateVars = {urls: newDB, user: users[req.session.user_id]}
   // console.log(users)
   // console.log("database")
@@ -251,7 +253,7 @@ app.post('/urls/:id/delete', (req, res) => {
 //longURL not updating on html to proper data **fixed
 app.get("/urls/:shortURL", (req, res) => {
   let id = req.params.shortURL;
-  newDB = urlsForUserId(req.session.user_id)
+  newDB = urlsForUserId(req.session.user_id, urlDatabase)
   let templateVars = { 
     shortURL: id, 
     urls: newDB,
