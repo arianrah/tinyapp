@@ -27,8 +27,8 @@ const generateRandomString = function() {
 
 //default url db
 const urlDatabase = {
-  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
-  i3BoGr: { longURL: "https://www.google.ca", userID: "user2RandomID" }
+  // b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
+  // i3BoGr: { longURL: "https://www.google.ca", userID: "user2RandomID" }
 };
 
 //default users db
