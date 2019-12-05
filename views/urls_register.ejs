@@ -1,12 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, shrink-to-fit=no"
-    />
-
     <!-- Bootstrap CSS -->
     <link
       rel="stylesheet"
@@ -14,29 +8,45 @@
       integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS"
       crossorigin="anonymous"
     />
-
-    <title>New URL - TinyApp Example</title>
+    <title>URL - TinyApp Example</title>
   </head>
 
   <body>
-    <% include partials/_header %>
-
-    <main style="margin: 1em;">
-      <h3>Create TinyURL</h3>
-      <form class="form-inline" action="/urls" method="POST">
-        <div class="form-group mb-2">
-          <label for="longURL">Enter a URL:</label>
+    <header>
+      <% include partials/_header.ejs %>
+    </header>
+    <div style="margin: 1em;" class="container">
+      <h1>Create Account</h1>
+      <form action="/register" method="POST">
+        <div class="form-group" style="width: 300px; margin: 1em">
+          <label for="email">Email address</label>
           <input
+            type="email"
+            name="email"
             class="form-control"
-            type="text"
-            name="longURL"
-            placeholder="http://"
-            style="width: 300px; margin: 1em"
+            id="exampleInputEmail1"
+            aria-describedby="emailHelp"
+            placeholder="Enter email"
           />
-          <button type="submit" class="btn btn-primary">Submit</button>
         </div>
+        <div
+          class="form-group"
+          action="/register"
+          style="width: 300px; margin: 1em"
+          method="POST"
+        >
+          <label for="password">Password</label>
+          <input
+            type="password"
+            name="password"
+            class="form-control"
+            id="exampleInputPassword1"
+            placeholder="Password"
+          />
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
       </form>
-    </main>
+    </div>
     <!-- Bootstrap JS -->
     <script
       src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
